@@ -5,26 +5,25 @@ import os
 import re
 
 import httpx
-from google import genai
-from google.genai import types
+from groq import AsyncGroq
 
 
 logger = logging.getLogger("firereach.tools")
 
-_llm_client: genai.Client | None = None
-LLM_MODEL = "gemini-2.5-flash"
+_llm_client: AsyncGroq | None = None
+LLM_MODEL = "llama-3.3-70b-versatile"
 
 
-def _get_llm_client() -> genai.Client:
+def _get_llm_client() -> AsyncGroq:
     global _llm_client
     if _llm_client is None:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise RuntimeError(
-                "GEMINI_API_KEY environment variable is not set. "
-                "Get a free key at https://aistudio.google.com/"
+                "GROQ_API_KEY environment variable is not set. "
+                "Get a free key at https://console.groq.com/"
             )
-        _llm_client = genai.Client(api_key=api_key)
+        _llm_client = AsyncGroq(api_key=api_key)
     return _llm_client
 
 
@@ -106,16 +105,16 @@ async def _clean_signals(company_name: str, raw_signals: list[str]) -> list[str]
         "Signals:\n"
     )
 
-    response = await client.aio.models.generate_content(
+    response = await client.chat.completions.create(
         model=LLM_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.2,
-        ),
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+        max_tokens=300,
     )
 
     cleaned = []
-    for line in response.text.strip().split("\n"):
+    text = response.choices[0].message.content or ""
+    for line in text.strip().split("\n"):
         line = line.strip()
         line = re.sub(r"^\d+[\.\)]\s*", "", line)
         line = line.lstrip("•-* ")
@@ -182,16 +181,15 @@ async def tool_research_analyst(icp: str, signals: list[str]) -> dict:
         f"Growth Signals:\n{signals_text}"
     )
 
-    response = await client.aio.models.generate_content(
+    response = await client.chat.completions.create(
         model=LLM_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.5,
-        ),
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5,
+        max_tokens=500,
     )
 
-    account_brief = response.text.strip()
-    return {"account_brief": account_brief}
+    account_brief = response.choices[0].message.content or ""
+    return {"account_brief": account_brief.strip()}
 
 
 async def tool_outreach_automated_sender(
@@ -220,19 +218,18 @@ async def tool_outreach_automated_sender(
         f"Growth Signals:\n{signals_text}"
     )
 
-    response = await client.aio.models.generate_content(
+    response = await client.chat.completions.create(
         model=LLM_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.7,
-        ),
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=400,
     )
 
-    email_content = response.text.strip()
+    email_content = response.choices[0].message.content or ""
 
     logger.info("  Email successfully sent to %s", email)
 
     return {
         "status": "sent",
-        "email_content": email_content,
+        "email_content": email_content.strip(),
     }

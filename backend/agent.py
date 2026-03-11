@@ -14,16 +14,16 @@ from schemas import AgentResponse
 logger = logging.getLogger("firereach.agent")
 
 
-def _check_gemini_key():
-    if not os.getenv("GEMINI_API_KEY"):
+def _check_groq_key():
+    if not os.getenv("GROQ_API_KEY"):
         raise RuntimeError(
-            "GEMINI_API_KEY environment variable is not set. "
-            "Get a free key at https://aistudio.google.com/"
+            "GROQ_API_KEY environment variable is not set. "
+            "Get a free key at https://console.groq.com/"
         )
 
 
 async def run_agent(icp: str, company: str, email: str) -> AgentResponse:
-    _check_gemini_key()
+    _check_groq_key()
 
     logger.info("Step 1: Harvesting signals for %s", company)
     harvest_result = await tool_signal_harvester(company_name=company)
