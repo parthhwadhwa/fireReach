@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 groq
+resend
 pydantic
 python-dotenv
 httpx
