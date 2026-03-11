@@ -241,32 +241,48 @@ async def tool_outreach_automated_sender(
         subject = lines[0][8:].strip()
         body = lines[1].strip() if len(lines) > 1 else body
 
-    # Actually send the email using Resend API (HTTP-based, won't be blocked by Render)
-    resend_api_key = os.getenv("RESEND_API_KEY")
+    # Actually send the email using MailerSend API (HTTP-based, won't be blocked by Render)
+    mailersend_api_key = os.getenv("MAILERSEND_API_KEY")
 
-    if resend_api_key:
-        import resend
-        resend.api_key = resend_api_key
+    if mailersend_api_key:
+        from mailersend import emails
         try:
-            # Note: Unless you have a verified custom domain in Resend, 
-            # you must use "onboarding@resend.dev" as the sender.
-            # And you can only send TO the email address associated with your Resend account.
-            r = resend.Emails.send({
-                "from": "onboarding@resend.dev",
-                "to": "parthwadhwa15@gmail.com",  # Forced to the verified email for free tier demo
-                "subject": subject,
-                "html": f"<p>{body.replace(chr(10), '<br>')}</p>",
-            })
-            logger.info("  Email successfully sent via Resend API: %s", r)
+            mailer = emails.NewEmail(mailersend_api_key)
+            mail_body = {}
+
+            # Using the verified MailerSend test domain
+            mail_from = {
+                "name": "FireReach Agent",
+                "email": "info@test-vz9dlem9y6p4kj50.mlsender.net",
+            }
+
+            # MailerSend test domains only allow sending to the verified account owner email
+            recipients = [
+                {
+                    "name": "Parth (Test)",
+                    "email": "parthwadhwa15@gmail.com",
+                }
+            ]
+
+            mailer.set_mail_from(mail_from, mail_body)
+            mailer.set_mail_to(recipients, mail_body)
+            mailer.set_subject(subject, mail_body)
+            mailer.set_html_content(f"<p>{body.replace(chr(10), '<br>')}</p>", mail_body)
+            mailer.set_plaintext_content(body, mail_body)
+
+            # Run SDK call in background thread just in case so it doesn't block FastAPI
+            import asyncio
+            response = await asyncio.to_thread(mailer.send, mail_body)
+            logger.info("  Email successfully sent via MailerSend API: %s", response)
         except Exception as e:
-            logger.error("  Failed to send email via Resend: %s", e)
+            logger.error("  Failed to send email via MailerSend: %s", e)
             return {
                 "status": "failed_to_send",
                 "email_content": email_content,
                 "error": str(e)
             }
     else:
-        logger.warning("  RESEND_API_KEY not set. Skipping actual email dispatch.")
+        logger.warning("  MAILERSEND_API_KEY not set. Skipping actual email dispatch.")
 
     return {
         "status": "sent",
