@@ -239,34 +239,32 @@ async def tool_outreach_automated_sender(
         subject = lines[0][8:].strip()
         body = lines[1].strip() if len(lines) > 1 else body
 
-    # Actually send the email via Gmail SMTP
-    smtp_email = os.getenv("SMTP_EMAIL")
-    smtp_password = os.getenv("SMTP_PASSWORD")
+    # Actually send the email using Resend API (HTTP-based, won't be blocked by Render)
+    resend_api_key = os.getenv("RESEND_API_KEY")
 
-    if smtp_email and smtp_password:
+    if resend_api_key:
+        import resend
+        resend.api_key = resend_api_key
         try:
-            msg = EmailMessage()
-            msg.set_content(body)
-            msg["Subject"] = subject
-            msg["From"] = smtp_email
-            msg["To"] = email
-
-            # Using ThreadPoolExecutor or just running synchronously
-            # smtplib is synchronous, but for a quick tool this is fine
-            server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5)
-            server.login(smtp_email, smtp_password)
-            server.send_message(msg)
-            server.quit()
-            logger.info("  Email successfully sent to %s via SMTP", email)
+            # Note: Unless you have a verified custom domain in Resend, 
+            # you must use "onboarding@resend.dev" as the sender.
+            # And you can only send TO the email address associated with your Resend account.
+            r = resend.Emails.send({
+                "from": "onboarding@resend.dev",
+                "to": email,
+                "subject": subject,
+                "html": f"<p>{body.replace(chr(10), '<br>')}</p>",
+            })
+            logger.info("  Email successfully sent to %s via Resend API: %s", email, r)
         except Exception as e:
-            logger.error("  Failed to send email via SMTP: %s", e)
+            logger.error("  Failed to send email via Resend: %s", e)
             return {
                 "status": "failed_to_send",
                 "email_content": email_content,
                 "error": str(e)
             }
     else:
-        logger.warning("  SMTP credentials not set. Skipping actual email dispatch.")
+        logger.warning("  RESEND_API_KEY not set. Skipping actual email dispatch.")
 
     return {
         "status": "sent",
