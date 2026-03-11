@@ -47,7 +47,7 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+# Edit .env and add your GROQ_API_KEY, SMTP_EMAIL, and SMTP_PASSWORD
 ```
 
 ### 3. Start backend
@@ -108,7 +108,9 @@ fireReach/
 
 | Variable         | Required | Description                                           |
 |------------------|----------|-------------------------------------------------------|
-| `GEMINI_API_KEY` | Yes      | Google Gemini API key ([get free](https://aistudio.google.com/)) |
+| `GROQ_API_KEY`   | Yes      | Groq API key for LLM generation ([get free](https://console.groq.com/)) |
+| `SMTP_EMAIL`     | Yes      | Gmail address used for sending automated outreach emails |
+| `SMTP_PASSWORD`  | Yes      | Gmail App Password (not normal password) for SMTP dispatch |
 
 For the frontend, set `NEXT_PUBLIC_API_URL` if your backend is not at `http://localhost:8000`.
 
@@ -122,7 +124,7 @@ For the frontend, set `NEXT_PUBLIC_API_URL` if your backend is not at `http://lo
 2. Point to this repo, set root directory to `fireReach`.
 3. Build command: `pip install -r requirements.txt`
 4. Start command: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Add env var: `GEMINI_API_KEY`
+5. Add env vars: `GROQ_API_KEY`, `SMTP_EMAIL`, `SMTP_PASSWORD`
 
 ### Frontend (Vercel)
 
@@ -137,7 +139,8 @@ For the frontend, set `NEXT_PUBLIC_API_URL` if your backend is not at `http://lo
 | Layer    | Technology                |
 |----------|---------------------------|
 | API      | FastAPI + Uvicorn         |
-| LLM      | Google Gemini 2.5 Flash   |
+| LLM      | Groq (llama-3.3-70b)      |
+| Email    | Python smtplib (Gmail)    |
 | Frontend | Next.js 16 (App Router)   |
 | Schemas  | Pydantic v2               |
 | Signals  | Google News + DuckDuckGo  |

@@ -263,4 +263,6 @@ Returns `{"status": "ok", "service": "FireReach"}`.
 
 | Variable         | Required | Description              |
 |------------------|----------|--------------------------|
-| `GEMINI_API_KEY` | Yes      | Google Gemini API key    |
+| `GROQ_API_KEY`   | Yes      | Groq API key             |
+| `SMTP_EMAIL`     | Yes      | Gmail address for sending|
+| `SMTP_PASSWORD`  | Yes      | Gmail App Password       |

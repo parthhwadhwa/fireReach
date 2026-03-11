@@ -192,6 +192,9 @@ async def tool_research_analyst(icp: str, signals: list[str]) -> dict:
     return {"account_brief": account_brief.strip()}
 
 
+from email.message import EmailMessage
+import smtplib
+
 async def tool_outreach_automated_sender(
     email: str,
     account_brief: str,
@@ -205,7 +208,7 @@ async def tool_outreach_automated_sender(
         "You are a world-class outreach copywriter. Write a short, "
         "personalized cold email.\n\n"
         "Rules:\n"
-        "1. Start with a subject line on the first line (format: Subject: ...)\n"
+        "1. Start with a subject line on the first line (format: Subject: [Your Subject])\n"
         "2. Explicitly reference at least one growth signal in the opening\n"
         "3. NO placeholders like [Name], [Company], [Your Name] — write real text\n"
         "4. Feels human and conversational — not templated\n"
@@ -226,10 +229,46 @@ async def tool_outreach_automated_sender(
     )
 
     email_content = response.choices[0].message.content or ""
+    email_content = email_content.strip()
 
-    logger.info("  Email successfully sent to %s", email)
+    # Parse out the Subject from the body
+    subject = "Outreach from FireReach"
+    body = email_content
+    lines = email_content.split("\n", 1)
+    if lines and lines[0].lower().startswith("subject:"):
+        subject = lines[0][8:].strip()
+        body = lines[1].strip() if len(lines) > 1 else body
+
+    # Actually send the email via Gmail SMTP
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if smtp_email and smtp_password:
+        try:
+            msg = EmailMessage()
+            msg.set_content(body)
+            msg["Subject"] = subject
+            msg["From"] = smtp_email
+            msg["To"] = email
+
+            # Using ThreadPoolExecutor or just running synchronously
+            # smtplib is synchronous, but for a quick tool this is fine
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login(smtp_email, smtp_password)
+            server.send_message(msg)
+            server.quit()
+            logger.info("  Email successfully sent to %s via SMTP", email)
+        except Exception as e:
+            logger.error("  Failed to send email via SMTP: %s", e)
+            return {
+                "status": "failed_to_send",
+                "email_content": email_content,
+                "error": str(e)
+            }
+    else:
+        logger.warning("  SMTP credentials not set. Skipping actual email dispatch.")
 
     return {
         "status": "sent",
-        "email_content": email_content.strip(),
+        "email_content": email_content,
     }
