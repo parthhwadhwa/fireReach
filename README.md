@@ -158,8 +158,19 @@ See [DOCS.md](./DOCS.md) for full agent documentation:
 
 ---
 
+---
+
+## ⚠️ Important Note on Email Dispatch (Deployment)
+
+If you deploy this application to **Render's Free Tier**, the automated email dispatch step may fail or timeout. 
+This is because Render (and many other cloud providers) strictly block outbound SMTP traffic (port 465/587) on free plans to prevent spam.
+
+We attempted to mitigate this using the **Resend API**, but Resend's free tier currently carries its own strict limitation: you can only send emails to the *exact email address you used to verify the account*. Therefore, dynamic outreach to arbitrary prospects will fail `HTTP 403` on a free Resend account without verified domains.
+
+**Current Fallback:** If the backend detects a blocked port or API limitation during the email dispatch step, it will gracefully catch the error and return the drafted email directly to the frontend UI, instructing the user to copy/paste and send it manually.
+
+---
+
 ## License
 
 MIT
-
-Resend free trial have issues, we cant send emails to any other recipient other than our own email thats why it is throwing an error

@@ -241,48 +241,32 @@ async def tool_outreach_automated_sender(
         subject = lines[0][8:].strip()
         body = lines[1].strip() if len(lines) > 1 else body
 
-    # Actually send the email using MailerSend API (HTTP-based, won't be blocked by Render)
-    mailersend_api_key = os.getenv("MAILERSEND_API_KEY")
+    # Actually send the email using Resend API (HTTP-based, won't be blocked by Render)
+    resend_api_key = os.getenv("RESEND_API_KEY")
 
-    if mailersend_api_key:
-        from mailersend import MailerSendClient
-        from mailersend.models.email import EmailRequest, EmailContact
+    if resend_api_key:
+        import resend
+        resend.api_key = resend_api_key
         try:
-            client = MailerSendClient(mailersend_api_key)
-
-            # Using the verified MailerSend test domain
-            from_email = EmailContact(
-                name="FireReach Agent",
-                email="info@test-vz9dlem9y6p4kj50.mlsender.net",
-            )
-
-            # MailerSend test domains only allow sending to the verified account owner email
-            to_email = EmailContact(
-                name="Parth (Test)",
-                email="parthwadhwa15@gmail.com",
-            )
-
-            req = EmailRequest(
-                from_email=from_email,
-                to=[to_email],
-                subject=subject,
-                text=body,
-                html=f"<p>{body.replace(chr(10), '<br>')}</p>",
-            )
-
-            # Run SDK call in background thread just in case so it doesn't block FastAPI
-            import asyncio
-            response = await asyncio.to_thread(client.emails.send, req)
-            logger.info("  Email successfully sent via MailerSend API: %s", response)
+            # Note: Unless you have a verified custom domain in Resend, 
+            # you must use "onboarding@resend.dev" as the sender.
+            # And you can only send TO the email address associated with your Resend account.
+            r = resend.Emails.send({
+                "from": "onboarding@resend.dev",
+                "to": "parthwadhwa15@gmail.com",  # Forced to the verified email for free tier demo
+                "subject": subject,
+                "html": f"<p>{body.replace(chr(10), '<br>')}</p>",
+            })
+            logger.info("  Email successfully sent via Resend API: %s", r)
         except Exception as e:
-            logger.error("  Failed to send email via MailerSend: %s", e)
+            logger.error("  Failed to send email via Resend: %s", e)
             return {
                 "status": "failed_to_send",
                 "email_content": email_content,
                 "error": str(e)
             }
     else:
-        logger.warning("  MAILERSEND_API_KEY not set. Skipping actual email dispatch.")
+        logger.warning("  RESEND_API_KEY not set. Skipping actual email dispatch.")
 
     return {
         "status": "sent",
