@@ -1,12 +1,3 @@
-"""
-FireReach – Tool definitions for the autonomous outreach agent.
-
-Tools:
-  - tool_signal_harvester          → deterministic growth-signal extraction
-  - tool_research_analyst          → LLM-generated account intelligence brief
-  - tool_outreach_automated_sender → personalised email generation + simulated send
-"""
-
 from __future__ import annotations
 
 import logging
@@ -19,11 +10,6 @@ from google.genai import types
 
 
 logger = logging.getLogger("firereach.tools")
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Gemini helper (used by tool_research_analyst & tool_outreach_sender)
-# ═══════════════════════════════════════════════════════════════════════════
 
 _llm_client: genai.Client | None = None
 LLM_MODEL = "gemini-2.5-flash"
@@ -42,11 +28,6 @@ def _get_llm_client() -> genai.Client:
     return _llm_client
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 1) tool_signal_harvester  (DETERMINISTIC — no LLM)
-# ═══════════════════════════════════════════════════════════════════════════
-
-# Search queries per the assignment spec
 _SIGNAL_QUERIES = [
     "{company} funding",
     "{company} hiring",
@@ -57,7 +38,6 @@ _SIGNAL_QUERIES = [
 
 
 async def _fetch_google_news(company_name: str) -> list[str]:
-    """Primary source: Google News RSS (no API key needed)."""
     signals: list[str] = []
     try:
         async with httpx.AsyncClient(timeout=10) as http:
@@ -79,7 +59,6 @@ async def _fetch_google_news(company_name: str) -> list[str]:
 
 
 async def _fetch_duckduckgo(company_name: str) -> list[str]:
-    """Fallback source: DuckDuckGo HTML search with targeted queries."""
     signals: list[str] = []
     try:
         async with httpx.AsyncClient(timeout=10) as http:
@@ -108,21 +87,11 @@ async def _fetch_duckduckgo(company_name: str) -> list[str]:
 
 
 async def tool_signal_harvester(company_name: str) -> dict:
-    """
-    Fetch deterministic growth signals about a company.
-
-    Strategy (purely deterministic — NO LLM):
-      1. Google News RSS for real headlines.
-      2. DuckDuckGo HTML search with targeted queries
-         ({company} funding / hiring / expansion / leadership change).
-    """
     signals: list[str] = []
 
-    # ── Source 1: Google News RSS ─────────────────────────────────────────
     logger.info("  Querying Google News RSS for %s", company_name)
     signals.extend(await _fetch_google_news(company_name))
 
-    # ── Source 2: DuckDuckGo targeted queries ─────────────────────────────
     if len(signals) < 3:
         logger.info(
             "  Querying DuckDuckGo with %d targeted queries for %s",
@@ -131,7 +100,6 @@ async def tool_signal_harvester(company_name: str) -> dict:
         )
         signals.extend(await _fetch_duckduckgo(company_name))
 
-    # ── Deduplicate & cap at 5 ────────────────────────────────────────────
     seen: set[str] = set()
     unique: list[str] = []
     for s in signals:
@@ -148,18 +116,7 @@ async def tool_signal_harvester(company_name: str) -> dict:
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 2) tool_research_analyst
-# ═══════════════════════════════════════════════════════════════════════════
-
 async def tool_research_analyst(icp: str, signals: list[str]) -> dict:
-    """
-    Generate a 2-paragraph account intelligence brief that aligns the
-    harvested growth signals with the ICP.
-
-    Paragraph 1: What the signals indicate about the company's growth.
-    Paragraph 2: Why the ICP solution is strategically relevant.
-    """
     client = _get_llm_client()
 
     signals_text = "\n".join(f"- {s}" for s in signals)
@@ -189,24 +146,11 @@ async def tool_research_analyst(icp: str, signals: list[str]) -> dict:
     return {"account_brief": account_brief}
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 3) tool_outreach_automated_sender
-# ═══════════════════════════════════════════════════════════════════════════
-
 async def tool_outreach_automated_sender(
     email: str,
     account_brief: str,
     signals: list[str],
 ) -> dict:
-    """
-    Generate and "send" a personalized outreach email.
-
-    Constraints enforced via prompt:
-      - Must explicitly reference at least one signal
-      - No generic templates
-      - Max 120 words
-      - Must sound human
-    """
     client = _get_llm_client()
 
     signals_text = "\n".join(f"- {s}" for s in signals)
@@ -235,7 +179,6 @@ async def tool_outreach_automated_sender(
 
     email_content = response.text.strip()
 
-    # Simulate sending
     logger.info("  Email successfully sent to %s", email)
 
     return {

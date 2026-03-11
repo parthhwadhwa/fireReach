@@ -1,7 +1,3 @@
-"""
-FireReach – Prompt templates for the outreach agent.
-"""
-
 SYSTEM_PROMPT = """\
 You are FireReach, an autonomous GTM outreach agent that identifies company \
 growth signals and generates personalized outreach based on those signals.
@@ -29,7 +25,6 @@ Rules:
 
 
 def build_user_prompt(icp: str, company: str, email: str) -> str:
-    """Return the user-turn message that kicks off the agent loop."""
     return (
         f"Target company: **{company}**\n"
         f"Recipient email: {email}\n"

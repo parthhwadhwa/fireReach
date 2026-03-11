@@ -1,10 +1,3 @@
-"""
-FireReach – FastAPI entry point.
-
-Run with:
-    uvicorn main:app --reload --port 8000
-"""
-
 from __future__ import annotations
 
 import logging
@@ -18,10 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from schemas import AgentRequest, AgentResponse
 from agent import run_agent
 
-# Load .env (for GEMINI_API_KEY, etc.)
 load_dotenv()
-
-# ── Logging ──────────────────────────────────────────────────────────────────
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,8 +20,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("firereach")
 
-
-# ── App setup ────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,8 +44,6 @@ app.add_middleware(
 )
 
 
-# ── Routes ───────────────────────────────────────────────────────────────────
-
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "FireReach"}
@@ -65,13 +51,6 @@ async def health():
 
 @app.post("/run-agent", response_model=AgentResponse)
 async def run_agent_endpoint(req: AgentRequest):
-    """
-    Kick off the outreach agent pipeline.
-
-    1. Receives the request (icp, company, email).
-    2. Calls the FireReach agent which sequentially runs all three tools.
-    3. Returns { signals, account_brief, email_content }.
-    """
     logger.info(
         "▶ /run-agent called  |  company=%s  email=%s",
         req.company,

@@ -27,10 +27,9 @@ export default function Home() {
     setResult(null);
     setError("");
 
-    // Animate steps while waiting
     setActiveStep(0);
-    const stepTimer1 = setTimeout(() => setActiveStep(1), 2000);
-    const stepTimer2 = setTimeout(() => setActiveStep(2), 5000);
+    const stepTimer1 = setTimeout(() => setActiveStep(1), 2500);
+    const stepTimer2 = setTimeout(() => setActiveStep(2), 6000);
 
     try {
       const res = await fetch(`${API_URL}/run-agent`, {
@@ -73,18 +72,16 @@ export default function Home() {
 
   return (
     <div className="container">
-      {/* ── Header ─────────────────────────────────── */}
       <header className="header">
         <div className="logo">
           <span className="logo-icon">🔥</span>
           <h1>FireReach</h1>
         </div>
         <p className="subtitle">
-          Autonomous signal-driven outreach engine
+          Signal-driven outreach, fully autonomous.
         </p>
       </header>
 
-      {/* ── Form ───────────────────────────────────── */}
       {!result && (
         <form onSubmit={handleSubmit}>
           <div className="form-card">
@@ -93,7 +90,7 @@ export default function Home() {
               <input
                 id="company"
                 type="text"
-                placeholder="e.g. Snyk"
+                placeholder="Snyk"
                 value={form.company}
                 onChange={handleChange("company")}
                 disabled={loading}
@@ -105,7 +102,7 @@ export default function Home() {
               <input
                 id="email"
                 type="email"
-                placeholder="e.g. founder@snyk.io"
+                placeholder="founder@snyk.io"
                 value={form.email}
                 onChange={handleChange("email")}
                 disabled={loading}
@@ -116,7 +113,7 @@ export default function Home() {
               <label htmlFor="icp">Ideal Customer Profile</label>
               <textarea
                 id="icp"
-                placeholder="e.g. We sell cybersecurity training to Series B startups"
+                placeholder="We sell cybersecurity training to Series B startups"
                 value={form.icp}
                 onChange={handleChange("icp")}
                 disabled={loading}
@@ -135,7 +132,6 @@ export default function Home() {
         </form>
       )}
 
-      {/* ── Step tracker ───────────────────────────── */}
       {(loading || result) && (
         <div className="steps">
           {STEP_LABELS.map((label, i) => (
@@ -153,7 +149,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Loading ────────────────────────────────── */}
       {loading && (
         <div className="loader">
           <div className="spinner" />
@@ -161,13 +156,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Error ──────────────────────────────────── */}
       {error && <div className="error-card">{error}</div>}
 
-      {/* ── Results ────────────────────────────────── */}
       {result && (
         <div className="results">
-          {/* Signals */}
           <div className="result-card">
             <div className="result-header">
               <span className="icon">📡</span> Signals Detected
@@ -190,7 +182,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Account Brief */}
           <div className="result-card">
             <div className="result-header">
               <span className="icon">🧠</span> Account Brief
@@ -200,7 +191,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Email */}
           <div className="result-card">
             <div className="result-header">
               <span className="icon">📧</span> Outreach Email
@@ -210,8 +200,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Reset */}
-          <button className="run-btn" onClick={handleReset}>
+          <button className="run-btn secondary" onClick={handleReset}>
             ← Run Again
           </button>
         </div>
