@@ -12,7 +12,7 @@ from google.genai import types
 logger = logging.getLogger("firereach.tools")
 
 _llm_client: genai.Client | None = None
-LLM_MODEL = "gemini-2.0-flash"
+LLM_MODEL = "gemini-2.5-flash"
 
 
 def _get_llm_client() -> genai.Client:
