@@ -245,34 +245,34 @@ async def tool_outreach_automated_sender(
     mailersend_api_key = os.getenv("MAILERSEND_API_KEY")
 
     if mailersend_api_key:
-        from mailersend import emails
+        from mailersend import MailerSendClient
+        from mailersend.models.email import EmailRequest, EmailContact
         try:
-            mailer = emails.NewEmail(mailersend_api_key)
-            mail_body = {}
+            client = MailerSendClient(mailersend_api_key)
 
             # Using the verified MailerSend test domain
-            mail_from = {
-                "name": "FireReach Agent",
-                "email": "info@test-vz9dlem9y6p4kj50.mlsender.net",
-            }
+            from_email = EmailContact(
+                name="FireReach Agent",
+                email="info@test-vz9dlem9y6p4kj50.mlsender.net",
+            )
 
             # MailerSend test domains only allow sending to the verified account owner email
-            recipients = [
-                {
-                    "name": "Parth (Test)",
-                    "email": "parthwadhwa15@gmail.com",
-                }
-            ]
+            to_email = EmailContact(
+                name="Parth (Test)",
+                email="parthwadhwa15@gmail.com",
+            )
 
-            mailer.set_mail_from(mail_from, mail_body)
-            mailer.set_mail_to(recipients, mail_body)
-            mailer.set_subject(subject, mail_body)
-            mailer.set_html_content(f"<p>{body.replace(chr(10), '<br>')}</p>", mail_body)
-            mailer.set_plaintext_content(body, mail_body)
+            req = EmailRequest(
+                from_email=from_email,
+                to=[to_email],
+                subject=subject,
+                text=body,
+                html=f"<p>{body.replace(chr(10), '<br>')}</p>",
+            )
 
             # Run SDK call in background thread just in case so it doesn't block FastAPI
             import asyncio
-            response = await asyncio.to_thread(mailer.send, mail_body)
+            response = await asyncio.to_thread(client.emails.send, req)
             logger.info("  Email successfully sent via MailerSend API: %s", response)
         except Exception as e:
             logger.error("  Failed to send email via MailerSend: %s", e)
